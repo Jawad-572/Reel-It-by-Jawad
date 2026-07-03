@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reel It — Product Photos to Ad Video</title>
+<meta name="description" content="Turn a product photo into a short ad video. Built for Shopify sellers.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#12131A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<div class="grain"></div>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <span class="wordmark">REEL IT</span>
+    <span class="wordmark-sub">by JD</span>
+  </div>
+  <button class="signout-btn" id="signOutBtn" hidden>Sign out</button>
+</header>
+
+<main class="stage">
+
+  <!-- SIGN-IN GATE: shown until a session exists -->
+  <section class="pass" id="passGate">
+    <div class="pass-card">
+      <span class="chalk-label">STUDIO PASS</span>
+      <h1 class="pass-title">One email. No password.</h1>
+      <p class="pass-sub">We'll send a link — tap it and you're on set.</p>
+      <input type="email" id="passEmail" class="chalk-input pass-input" placeholder="you@yourstore.com" autocomplete="email">
+      <button class="roll-btn pass-btn" id="passSendBtn">
+        <span class="roll-btn-label">Send my pass</span>
+      </button>
+      <p class="pass-status" id="passStatus"></p>
+    </div>
+  </section>
+
+  <!-- HERO: literal clapperboard as the product's own configuration panel -->
+  <section class="slate" id="slate" hidden>
+    <div class="slate-clap" id="slateClap">
+      <div class="slate-stripes"></div>
+    </div>
+
+    <div class="slate-body">
+      <div class="slate-row slate-row--header">
+        <span class="chalk-label">PRODUCTION</span>
+        <span class="chalk-value">AD REEL</span>
+      </div>
+
+      <div class="slate-row" data-field="product">
+        <span class="chalk-label">PRODUCT</span>
+        <label class="uploader" for="productPhoto">
+          <span id="uploaderText">Tap to add a photo</span>
+          <input type="file" id="productPhoto" accept="image/*" hidden>
+        </label>
+      </div>
+
+      <div class="slate-row" data-field="direction">
+        <span class="chalk-label">DIRECTION</span>
+        <input type="text" id="directionInput" class="chalk-input" placeholder="e.g. slow rotate, warm morning light, steam rising off the mug" maxlength="180">
+      </div>
+
+      <div class="slate-row" data-field="scene">
+        <span class="chalk-label">SCENE</span>
+        <div class="chip-row" id="sceneChips">
+          <button type="button" class="chip is-active" data-scene="studio">Studio</button>
+          <button type="button" class="chip" data-scene="lifestyle">Lifestyle</button>
+          <button type="button" class="chip" data-scene="unboxing">Unboxing</button>
+          <button type="button" class="chip" data-scene="macro">Macro detail</button>
+        </div>
+      </div>
+
+      <div class="slate-row" data-field="length">
+        <span class="chalk-label">LENGTH</span>
+        <div class="chip-row" id="lengthChips">
+          <button type="button" class="chip is-active" data-length="5">5s</button>
+          <button type="button" class="chip" data-length="10">10s</button>
+        </div>
+      </div>
+
+      <div class="slate-row slate-row--footer">
+        <span class="chalk-label">TAKE</span>
+        <span class="chalk-value" id="creditsLeft">3 free rolls left</span>
+      </div>
+    </div>
+  </section>
+
+  <button class="roll-btn" id="rollBtn" hidden>
+    <span class="roll-btn-label">Roll camera</span>
+    <span class="roll-btn-sub">Generates 1 ad video</span>
+  </button>
+
+  <!-- Generation state -->
+  <section class="rolling" id="rollingState" hidden>
+    <div class="clap-anim" id="clapAnim">
+      <div class="clap-top"></div>
+      <div class="clap-bottom"></div>
+    </div>
+    <p class="rolling-text">Rolling<span class="dots"><span>.</span><span>.</span><span>.</span></span></p>
+    <p class="rolling-sub" id="rollingSub">Sending your shot to the studio</p>
+  </section>
+
+  <!-- Result -->
+  <section class="result" id="resultState" hidden>
+    <div class="result-frame">
+      <video id="resultVideo" controls playsinline></video>
+    </div>
+    <div class="result-actions">
+      <a id="downloadBtn" class="btn-primary" download="ad-reel.mp4">Download</a>
+      <button class="btn-secondary" id="anotherTakeBtn">Shoot another take</button>
+    </div>
+  </section>
+
+  <!-- Error -->
+  <section class="error-state" id="errorState" hidden>
+    <p class="error-heading">Cut.</p>
+    <p class="error-body" id="errorBody">Something went wrong on set. Try again.</p>
+    <button class="btn-secondary" id="errorRetryBtn">Back to the slate</button>
+  </section>
+
+</main>
+
+<footer class="credits-strip">
+  <span>Free rolls reset monthly · No card required to test</span>
+</footer>
+
+<script src="auth.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
