@@ -46,10 +46,14 @@ authEls.passSendBtn.addEventListener("click", async () => {
   });
 
   if (error) {
-    authEls.passStatus.textContent = "Couldn't send that — try again in a moment.";
-    authEls.passSendBtn.disabled = false;
-    return;
-  }
+  console.error("Supabase Error:", error);
+
+  authEls.passStatus.textContent =
+    `Error: ${error.message}`;
+
+  authEls.passSendBtn.disabled = false;
+  return;
+}
   authEls.passStatus.textContent = `Pass sent to ${email}. Check your inbox.`;
 });
 
