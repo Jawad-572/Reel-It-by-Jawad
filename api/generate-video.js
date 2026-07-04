@@ -1,35 +1,19 @@
-// netlify/functions/generate-video.js
-//
-// Receives the product photo + direction from the browser, submits a
-// job to fal.ai's queue API, and returns a request id for polling.
-// The FAL_KEY never leaves this server-side function.
-//
-// Env var required (set in Netlify dashboard, not in code):
-//   FAL_KEY = your fal.ai API key
-//
-// Optional env var to swap models without touching code:
-//   FAL_MODEL = e.g. "fal-ai/kling-video/v1.6/standard/image-to-video"
-// Cheaper models (Kling standard, Wan) keep cost near $0.05-0.10/sec.
-// Check fal.ai's model page for the current path + required params
-// before going live — these change as providers ship new versions.
-
-const { getAdminClient, getUserFromRequest } = require("./_supabase");
+const { getAdminClient, getUserFromRequest } = require("../lib/supabase");
 
 const FAL_MODEL = process.env.FAL_MODEL || "fal-ai/kling-video/v1.6/standard/image-to-video";
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method not allowed" };
+module.exports = async (req, res) => {
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method not allowed" });
   }
 
   const FAL_KEY = process.env.FAL_KEY;
   if (!FAL_KEY) {
-    return json(500, { message: "Server isn't configured with a FAL_KEY yet." });
+    return res.status(500).json({ message: "Server isn't configured with a FAL_KEY yet." });
   }
 
-  // ---- auth + credit check happen before we spend any fal.ai money ----
-  const user = await getUserFromRequest(event);
-  if (!user) return json(401, { message: "Sign in to start rolling." });
+  const user = await getUserFromRequest(req);
+  if (!user) return res.status(401).json({ message: "Sign in to start rolling." });
 
   const admin = getAdminClient();
   let { data: profile } = await admin
@@ -48,19 +32,12 @@ exports.handler = async (event) => {
   }
 
   if (profile.rolls_used >= profile.rolls_limit) {
-    return json(402, { message: "Out of rolls. Upgrade to keep shooting." });
+    return res.status(402).json({ message: "Out of rolls. Upgrade to keep shooting." });
   }
 
-  let payload;
-  try {
-    payload = JSON.parse(event.body);
-  } catch {
-    return json(400, { message: "Bad request." });
-  }
-
-  const { image, direction, scene, lengthSeconds } = payload;
+  const { image, direction, scene, lengthSeconds } = req.body;
   if (!image) {
-    return json(400, { message: "No photo received." });
+    return res.status(400).json({ message: "No photo received." });
   }
 
   const scenePrompts = {
@@ -76,11 +53,6 @@ exports.handler = async (event) => {
   ].join(", ");
 
   try {
-    // fal.ai's queue endpoint: submit now, poll separately.
-    // `image_url` accepts a data: URI directly for most fal models —
-    // for higher-volume production, upload to fal storage first
-    // (https://fal.ai/docs/storage) and pass that URL instead, since
-    // large base64 payloads are slower to submit.
     const submitRes = await fetch(`https://queue.fal.run/${FAL_MODEL}`, {
       method: "POST",
       headers: {
@@ -97,13 +69,11 @@ exports.handler = async (event) => {
     if (!submitRes.ok) {
       const errText = await submitRes.text();
       console.error("fal.ai submit failed:", submitRes.status, errText);
-      return json(502, { message: "The studio's camera didn't respond. Try again shortly." });
+      return res.status(502).json({ message: "The studio's camera didn't respond. Try again shortly." });
     }
 
     const data = await submitRes.json();
 
-    // Consume the roll now — same logic as real film: you pay for the
-    // take when you shoot it, not only when it comes out well.
     const { data: updated } = await admin
       .from("profiles")
       .update({ rolls_used: profile.rolls_used + 1 })
@@ -111,8 +81,7 @@ exports.handler = async (event) => {
       .select("rolls_used, rolls_limit")
       .single();
 
-    // fal.ai returns { request_id, status_url, response_url, ... }
-    return json(200, {
+    return res.status(200).json({
       requestId: data.request_id,
       statusUrl: data.status_url,
       responseUrl: data.response_url,
@@ -121,14 +90,6 @@ exports.handler = async (event) => {
 
   } catch (err) {
     console.error(err);
-    return json(500, { message: "Unexpected error starting the shoot." });
+    return res.status(500).json({ message: "Unexpected error starting the shoot." });
   }
 };
-
-function json(statusCode, body) {
-  return {
-    statusCode,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  };
-}
