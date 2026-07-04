@@ -88,7 +88,7 @@ async function refreshCreditsFromServer() {
   const token = await window.ReelAuth.getAccessToken();
   if (!token) return;
   try {
-    const res = await fetch("/.netlify/functions/get-profile", {
+    const res = await fetch("/api/get-profile", {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return;
