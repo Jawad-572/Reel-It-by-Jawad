@@ -1,4 +1,4 @@
-// netlify/functions/_supabase.js
+// api/_supabase.js
 //
 // Two clients, two jobs:
 //  - anonClient: only used to verify the user's access token
