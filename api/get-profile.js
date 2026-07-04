@@ -1,14 +1,8 @@
-// netlify/functions/get-profile.js
-//
-// Called right after sign-in, and after each roll, to show accurate
-// credits. Creates a profile row on first call as a safety net in
-// case the DB trigger hasn't fired yet.
+const { getAdminClient, getUserFromRequest } = require("../lib/supabase");
 
-const { getAdminClient, getUserFromRequest } = require("./_supabase");
-
-exports.handler = async (event) => {
-  const user = await getUserFromRequest(event);
-  if (!user) return json(401, { message: "Not signed in." });
+module.exports = async (req, res) => {
+  const user = await getUserFromRequest(req);
+  if (!user) return res.status(401).json({ message: "Not signed in." });
 
   const admin = getAdminClient();
 
@@ -27,7 +21,7 @@ exports.handler = async (event) => {
     profile = created;
   }
 
-  return json(200, {
+  return res.status(200).json({
     email: user.email,
     rollsUsed: profile.rolls_used,
     rollsLimit: profile.rolls_limit,
@@ -35,7 +29,3 @@ exports.handler = async (event) => {
     rollsLeft: Math.max(0, profile.rolls_limit - profile.rolls_used),
   });
 };
-
-function json(statusCode, body) {
-  return { statusCode, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
-}
