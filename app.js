@@ -1,6 +1,6 @@
 // ============================================
 // REEL IT — app.js
-// Talks only to our own Netlify functions.
+// Talks only to our own backend functions.
 // The fal.ai key never touches the browser.
 // ============================================
 
@@ -94,7 +94,7 @@ async function generateVideo() {
 
     // Step 1: submit the job. Our function forwards to fal.ai and
     // returns a request id we can poll (fal.ai jobs are async).
-    const submitRes = await fetch("/.netlify/functions/generate-video", {
+    const submitRes = await fetch("/api/generate-video", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -140,7 +140,7 @@ async function pollForResult(requestId) {
   const maxAttempts = 40; // ~2 minutes at 3s intervals
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     els.rollingSub.textContent = messages[Math.min(attempt, messages.length - 1)];
-    const res = await fetch(`/.netlify/functions/check-status?id=${encodeURIComponent(requestId)}`);
+    const res = await fetch(`/api/check-status?id=${encodeURIComponent(requestId)}`);
     if (!res.ok) throw new Error("Lost connection to the studio.");
     const data = await res.json();
 
