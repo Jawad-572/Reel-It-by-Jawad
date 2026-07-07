@@ -110,7 +110,7 @@ async function generateVideo() {
 
     if (!submitRes.ok) {
       const err = await safeJson(submitRes);
-      throw new Error(err?.message || "The studio couldn't start the shoot.");
+      throw new Error((err?.message || "The studio couldn't start the shoot.") + ` [status: ${submitRes.status}]`);
     }
     const { requestId } = await submitRes.json();
 
